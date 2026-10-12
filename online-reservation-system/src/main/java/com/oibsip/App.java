@@ -7,6 +7,7 @@ import javax.swing.JLabel;
 import javax.swing.JButton;
 import javax.swing.SwingUtilities;
 import java.awt.FlowLayout;
+import java.awt.BorderLayout;
 
 public class App {
 
@@ -16,9 +17,10 @@ public class App {
 
             JFrame frame = new JFrame("Online Reservation System");
 
-            JPanel panel = new JPanel(new FlowLayout());
+            JPanel panel = new JPanel(new BorderLayout(10, 10));
+            JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
 
-            JLabel label = new JLabel("Welcome to Online Reservation System");
+            JLabel label = new JLabel("Welcome to Online Reservation System", JLabel.CENTER);
 
             JButton bookButton = new JButton("Book Reservation");
             JButton viewButton = new JButton("View Reservations");
@@ -36,11 +38,11 @@ public class App {
                 label.setText("Cancel Reservation selected")
             );
 
-            panel.add(label);
-            panel.add(bookButton);
-            panel.add(viewButton);
-            panel.add(cancelButton);
-
+            panel.add(label, BorderLayout.PAGE_START);
+            buttonPanel.add(bookButton);
+            buttonPanel.add(viewButton);
+            buttonPanel.add(cancelButton);
+            panel.add(buttonPanel, BorderLayout.CENTER);
             frame.add(panel);
 
             frame.setSize(550, 180);
