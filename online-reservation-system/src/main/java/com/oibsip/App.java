@@ -1,33 +1,39 @@
 
 package com.oibsip;
 
+import com.oibsip.reservation.model.Reservation;
+
 import javax.swing.*;
 import java.awt.*;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 
 public class App {
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> createHomeScreen());
+        SwingUtilities.invokeLater(App::createHomeScreen);
     }
 
     private static void createHomeScreen() {
 
         JFrame frame = new JFrame("Online Reservation System");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(600, 250);
+        frame.setSize(750, 300);
         frame.setLocationRelativeTo(null);
 
-        JPanel panel = new JPanel(new BorderLayout(10, 20));
-        panel.setBorder(BorderFactory.createEmptyBorder(25, 20, 25, 20));
+        JPanel panel = new JPanel(new BorderLayout(10, 25));
+        panel.setBorder(
+                BorderFactory.createEmptyBorder(30, 20, 30, 20)
+        );
 
         JLabel title = new JLabel(
                 "Welcome to Online Reservation System",
                 JLabel.CENTER
         );
-        title.setFont(new Font("Arial", Font.BOLD, 20));
+        title.setFont(new Font("Arial", Font.BOLD, 24));
 
         JPanel buttonPanel = new JPanel(
-                new FlowLayout(FlowLayout.CENTER, 10, 10)
+                new FlowLayout(FlowLayout.CENTER, 12, 10)
         );
 
         JButton bookButton = new JButton("Book Reservation");
@@ -39,7 +45,7 @@ public class App {
         viewButton.addActionListener(event ->
                 JOptionPane.showMessageDialog(
                         frame,
-                        "View Reservations will be implemented next."
+                        "View Reservations will be implemented later."
                 )
         );
 
@@ -64,7 +70,7 @@ public class App {
     private static void openBookingForm(JFrame homeFrame) {
 
         JFrame bookingFrame = new JFrame("Book Reservation");
-        bookingFrame.setSize(450, 350);
+        bookingFrame.setSize(500, 400);
         bookingFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         bookingFrame.setLocationRelativeTo(homeFrame);
 
@@ -73,19 +79,17 @@ public class App {
                 BorderFactory.createEmptyBorder(20, 20, 20, 20)
         );
 
-        JLabel nameLabel = new JLabel("Passenger Name:");
-        JTextField nameField = new JTextField(15);
+        JTextField nameField = new JTextField();
+        JTextField trainField = new JTextField();
+        JTextField dateField = new JTextField();
 
-        JLabel trainLabel = new JLabel("Train Number:");
-        JTextField trainField = new JTextField(15);
-
-        JLabel dateLabel = new JLabel("Journey Date (YYYY-MM-DD):");
-        JTextField dateField = new JTextField(15);
-
-        JLabel classLabel = new JLabel("Travel Class:");
         String[] classes = {
-                "Sleeper", "AC 3 Tier", "AC 2 Tier", "AC First Class"
+                "Sleeper",
+                "AC 3 Tier",
+                "AC 2 Tier",
+                "AC First Class"
         };
+
         JComboBox<String> classBox = new JComboBox<>(classes);
 
         JButton submitButton = new JButton("Book");
@@ -95,11 +99,12 @@ public class App {
 
             String name = nameField.getText().trim();
             String trainNumber = trainField.getText().trim();
-            String journeyDate = dateField.getText().trim();
+            String dateText = dateField.getText().trim();
             String travelClass = (String) classBox.getSelectedItem();
 
-            if (name.isEmpty() || trainNumber.isEmpty()
-                    || journeyDate.isEmpty()) {
+            if (name.isEmpty()
+                    || trainNumber.isEmpty()
+                    || dateText.isEmpty()) {
 
                 JOptionPane.showMessageDialog(
                         bookingFrame,
@@ -113,38 +118,55 @@ public class App {
             if (!trainNumber.matches("\\d+")) {
                 JOptionPane.showMessageDialog(
                         bookingFrame,
-                        "Train number must contain digits only."
+                        "Train number must contain digits only.",
+                        "Invalid Train Number",
+                        JOptionPane.WARNING_MESSAGE
                 );
                 return;
             }
+
+            LocalDate journeyDate;
 
             try {
-                java.time.LocalDate date =
-                        java.time.LocalDate.parse(journeyDate);
-
-                if (date.isBefore(java.time.LocalDate.now())) {
-                    JOptionPane.showMessageDialog(
-                            bookingFrame,
-                            "Journey date cannot be in the past."
-                    );
-                    return;
-                }
-
-            } catch (java.time.format.DateTimeParseException ex) {
+                journeyDate = LocalDate.parse(dateText);
+            } catch (DateTimeParseException exception) {
                 JOptionPane.showMessageDialog(
                         bookingFrame,
-                        "Enter a valid date in YYYY-MM-DD format."
+                        "Enter a valid date in YYYY-MM-DD format.",
+                        "Invalid Date",
+                        JOptionPane.WARNING_MESSAGE
                 );
                 return;
             }
+
+            if (journeyDate.isBefore(LocalDate.now())) {
+                JOptionPane.showMessageDialog(
+                        bookingFrame,
+                        "Journey date cannot be in the past.",
+                        "Invalid Date",
+                        JOptionPane.WARNING_MESSAGE
+                );
+                return;
+            }
+
+            Reservation reservation = new Reservation(
+                    name,
+                    trainNumber,
+                    journeyDate,
+                    travelClass
+            );
 
             JOptionPane.showMessageDialog(
                     bookingFrame,
-                    "Form validated successfully!\n\n"
-                            + "Passenger: " + name + "\n"
-                            + "Train Number: " + trainNumber + "\n"
-                            + "Journey Date: " + journeyDate + "\n"
-                            + "Travel Class: " + travelClass
+                    "Reservation object created successfully!\n\n"
+                            + "Passenger: "
+                            + reservation.getPassengerName() + "\n"
+                            + "Train Number: "
+                            + reservation.getTrainNumber() + "\n"
+                            + "Journey Date: "
+                            + reservation.getJourneyDate() + "\n"
+                            + "Travel Class: "
+                            + reservation.getTravelClass()
                             + "\n\nThis reservation is not saved yet."
             );
         });
@@ -156,16 +178,16 @@ public class App {
             classBox.setSelectedIndex(0);
         });
 
-        formPanel.add(nameLabel);
+        formPanel.add(new JLabel("Passenger Name:"));
         formPanel.add(nameField);
 
-        formPanel.add(trainLabel);
+        formPanel.add(new JLabel("Train Number:"));
         formPanel.add(trainField);
 
-        formPanel.add(dateLabel);
+        formPanel.add(new JLabel("Journey Date (YYYY-MM-DD):"));
         formPanel.add(dateField);
 
-        formPanel.add(classLabel);
+        formPanel.add(new JLabel("Travel Class:"));
         formPanel.add(classBox);
 
         formPanel.add(submitButton);
