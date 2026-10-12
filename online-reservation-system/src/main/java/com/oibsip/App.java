@@ -20,18 +20,30 @@ public class App {
 
             JLabel label = new JLabel("Welcome to Online Reservation System");
 
-            JButton button = new JButton("Book Reservation");
+            JButton bookButton = new JButton("Book Reservation");
+            JButton viewButton = new JButton("View Reservations");
+            JButton cancelButton = new JButton("Cancel Reservation");
 
-            button.addActionListener(event -> {
-                label.setText("You clicked Book Reservation!");
-            });
+            bookButton.addActionListener(event ->
+                label.setText("Book Reservation selected")
+            );
+
+            viewButton.addActionListener(event ->
+                label.setText("View Reservations selected")
+            );
+
+            cancelButton.addActionListener(event ->
+                label.setText("Cancel Reservation selected")
+            );
 
             panel.add(label);
-            panel.add(button);
+            panel.add(bookButton);
+            panel.add(viewButton);
+            panel.add(cancelButton);
 
             frame.add(panel);
 
-            frame.setSize(450, 180);
+            frame.setSize(550, 180);
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setLocationRelativeTo(null);
             frame.setVisible(true);
