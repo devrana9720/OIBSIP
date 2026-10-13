@@ -7,7 +7,10 @@ import com.oibsip.reservation.model.Reservation;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ReservationDAO {
 
@@ -24,11 +27,50 @@ public class ReservationDAO {
                      connection.prepareStatement(sql)) {
 
             statement.setString(1, reservation.getPassengerName());
-            statement.setInt(2, Integer.parseInt(reservation.getTrainNumber()));
-            statement.setDate(3, Date.valueOf(reservation.getJourneyDate()));
+            statement.setInt(
+                    2,
+                    Integer.parseInt(reservation.getTrainNumber())
+            );
+            statement.setDate(
+                    3,
+                    Date.valueOf(reservation.getJourneyDate())
+            );
             statement.setString(4, reservation.getTravelClass());
 
             return statement.executeUpdate() > 0;
         }
+    }
+
+    public List<Reservation> findAll() throws SQLException {
+
+        List<Reservation> reservations = new ArrayList<>();
+
+        String sql = """
+                SELECT passenger_name, train_number, journey_date, travel_class
+                FROM reservations
+                ORDER BY id DESC
+                """;
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement =
+                     connection.prepareStatement(sql);
+             ResultSet resultSet = statement.executeQuery()) {
+
+            while (resultSet.next()) {
+
+                Reservation reservation = new Reservation(
+                        resultSet.getString("passenger_name"),
+                        String.valueOf(
+                                resultSet.getInt("train_number")
+                        ),
+                        resultSet.getDate("journey_date").toLocalDate(),
+                        resultSet.getString("travel_class")
+                );
+
+                reservations.add(reservation);
+            }
+        }
+
+        return reservations;
     }
 }

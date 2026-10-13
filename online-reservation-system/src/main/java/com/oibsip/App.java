@@ -5,10 +5,12 @@ import com.oibsip.reservation.dao.ReservationDAO;
 import com.oibsip.reservation.model.Reservation;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import java.util.List;
 
 public class App {
 
@@ -44,17 +46,12 @@ public class App {
 
         bookButton.addActionListener(event -> openBookingForm(frame));
 
-        viewButton.addActionListener(event ->
-                JOptionPane.showMessageDialog(
-                        frame,
-                        "View Reservations will be implemented later."
-                )
-        );
+        viewButton.addActionListener(event -> showReservations(frame));
 
         cancelButton.addActionListener(event ->
                 JOptionPane.showMessageDialog(
                         frame,
-                        "Cancel Reservation will be implemented later."
+                        "Cancel Reservation will be implemented next."
                 )
         );
 
@@ -235,5 +232,70 @@ public class App {
 
         bookingFrame.add(formPanel);
         bookingFrame.setVisible(true);
+    }
+
+    private static void showReservations(JFrame homeFrame) {
+
+        try {
+            ReservationDAO reservationDAO = new ReservationDAO();
+            List<Reservation> reservations = reservationDAO.findAll();
+
+            String[] columns = {
+                    "Passenger Name",
+                    "Train Number",
+                    "Journey Date",
+                    "Travel Class"
+            };
+
+            DefaultTableModel model = new DefaultTableModel(columns, 0) {
+                @Override
+                public boolean isCellEditable(int row, int column) {
+                    return false;
+                }
+            };
+
+            for (Reservation reservation : reservations) {
+                model.addRow(new Object[]{
+                        reservation.getPassengerName(),
+                        reservation.getTrainNumber(),
+                        reservation.getJourneyDate(),
+                        reservation.getTravelClass()
+                });
+            }
+
+            JTable table = new JTable(model);
+            table.setRowHeight(28);
+            table.setAutoCreateRowSorter(true);
+            table.setFillsViewportHeight(true);
+
+            JScrollPane scrollPane = new JScrollPane(table);
+            scrollPane.setPreferredSize(new Dimension(650, 300));
+
+            if (reservations.isEmpty()) {
+                JOptionPane.showMessageDialog(
+                        homeFrame,
+                        "No reservations found.",
+                        "View Reservations",
+                        JOptionPane.INFORMATION_MESSAGE
+                );
+                return;
+            }
+
+            JOptionPane.showMessageDialog(
+                    homeFrame,
+                    scrollPane,
+                    "View Reservations",
+                    JOptionPane.PLAIN_MESSAGE
+            );
+
+        } catch (SQLException | IllegalStateException exception) {
+            JOptionPane.showMessageDialog(
+                    homeFrame,
+                    "Could not load reservations.\n"
+                            + exception.getMessage(),
+                    "Database Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+        }
     }
 }
