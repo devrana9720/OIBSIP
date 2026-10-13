@@ -1,4 +1,3 @@
-
 package com.oibsip.reservation.dao;
 
 import com.oibsip.reservation.db.DBConnection;
@@ -46,7 +45,8 @@ public class ReservationDAO {
         List<Reservation> reservations = new ArrayList<>();
 
         String sql = """
-                SELECT passenger_name, train_number, journey_date, travel_class
+                SELECT id, passenger_name, train_number,
+                       journey_date, travel_class
                 FROM reservations
                 ORDER BY id DESC
                 """;
@@ -59,10 +59,9 @@ public class ReservationDAO {
             while (resultSet.next()) {
 
                 Reservation reservation = new Reservation(
+                        resultSet.getInt("id"),
                         resultSet.getString("passenger_name"),
-                        String.valueOf(
-                                resultSet.getInt("train_number")
-                        ),
+                        String.valueOf(resultSet.getInt("train_number")),
                         resultSet.getDate("journey_date").toLocalDate(),
                         resultSet.getString("travel_class")
                 );
@@ -72,5 +71,19 @@ public class ReservationDAO {
         }
 
         return reservations;
+    }
+
+    public boolean deleteById(int id) throws SQLException {
+
+        String sql = "DELETE FROM reservations WHERE id = ?";
+
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement =
+                     connection.prepareStatement(sql)) {
+
+            statement.setInt(1, id);
+
+            return statement.executeUpdate() > 0;
+        }
     }
 }

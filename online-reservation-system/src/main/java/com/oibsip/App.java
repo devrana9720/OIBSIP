@@ -1,4 +1,3 @@
-
 package com.oibsip;
 
 import com.oibsip.reservation.dao.ReservationDAO;
@@ -45,14 +44,9 @@ public class App {
         JButton cancelButton = new JButton("Cancel Reservation");
 
         bookButton.addActionListener(event -> openBookingForm(frame));
-
         viewButton.addActionListener(event -> showReservations(frame));
-
-        cancelButton.addActionListener(event ->
-                JOptionPane.showMessageDialog(
-                        frame,
-                        "Cancel Reservation will be implemented next."
-                )
+        cancelButton.addActionListener(
+                event -> openCancellationScreen(frame)
         );
 
         buttonPanel.add(bookButton);
@@ -157,7 +151,6 @@ public class App {
 
             try {
                 ReservationDAO reservationDAO = new ReservationDAO();
-
                 boolean saved = reservationDAO.save(reservation);
 
                 if (saved) {
@@ -205,6 +198,14 @@ public class App {
                         "Configuration Error",
                         JOptionPane.ERROR_MESSAGE
                 );
+
+            } catch (NumberFormatException exception) {
+                JOptionPane.showMessageDialog(
+                        bookingFrame,
+                        "Train number is too large.",
+                        "Invalid Train Number",
+                        JOptionPane.WARNING_MESSAGE
+                );
             }
         });
 
@@ -240,7 +241,18 @@ public class App {
             ReservationDAO reservationDAO = new ReservationDAO();
             List<Reservation> reservations = reservationDAO.findAll();
 
+            if (reservations.isEmpty()) {
+                JOptionPane.showMessageDialog(
+                        homeFrame,
+                        "No reservations found.",
+                        "View Reservations",
+                        JOptionPane.INFORMATION_MESSAGE
+                );
+                return;
+            }
+
             String[] columns = {
+                    "Reservation ID",
                     "Passenger Name",
                     "Train Number",
                     "Journey Date",
@@ -256,6 +268,7 @@ public class App {
 
             for (Reservation reservation : reservations) {
                 model.addRow(new Object[]{
+                        reservation.getId(),
                         reservation.getPassengerName(),
                         reservation.getTrainNumber(),
                         reservation.getJourneyDate(),
@@ -269,17 +282,7 @@ public class App {
             table.setFillsViewportHeight(true);
 
             JScrollPane scrollPane = new JScrollPane(table);
-            scrollPane.setPreferredSize(new Dimension(650, 300));
-
-            if (reservations.isEmpty()) {
-                JOptionPane.showMessageDialog(
-                        homeFrame,
-                        "No reservations found.",
-                        "View Reservations",
-                        JOptionPane.INFORMATION_MESSAGE
-                );
-                return;
-            }
+            scrollPane.setPreferredSize(new Dimension(700, 300));
 
             JOptionPane.showMessageDialog(
                     homeFrame,
@@ -297,5 +300,151 @@ public class App {
                     JOptionPane.ERROR_MESSAGE
             );
         }
+    }
+
+    private static void openCancellationScreen(JFrame homeFrame) {
+
+        JFrame cancelFrame = new JFrame("Cancel Reservation");
+        cancelFrame.setSize(850, 400);
+        cancelFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        cancelFrame.setLocationRelativeTo(homeFrame);
+
+        String[] columns = {
+                "Reservation ID",
+                "Passenger Name",
+                "Train Number",
+                "Journey Date",
+                "Travel Class"
+        };
+
+        DefaultTableModel model = new DefaultTableModel(columns, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+
+        JTable table = new JTable(model);
+        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        table.setRowHeight(28);
+        table.setAutoCreateRowSorter(true);
+
+        JButton cancelButton =
+                new JButton("Cancel Selected Reservation");
+        JButton closeButton = new JButton("Close");
+
+        Runnable loadReservations = () -> {
+            try {
+                List<Reservation> reservations =
+                        new ReservationDAO().findAll();
+
+                model.setRowCount(0);
+
+                for (Reservation reservation : reservations) {
+                    model.addRow(new Object[]{
+                            reservation.getId(),
+                            reservation.getPassengerName(),
+                            reservation.getTrainNumber(),
+                            reservation.getJourneyDate(),
+                            reservation.getTravelClass()
+                    });
+                }
+
+                cancelButton.setEnabled(!reservations.isEmpty());
+
+            } catch (SQLException | IllegalStateException exception) {
+                JOptionPane.showMessageDialog(
+                        cancelFrame,
+                        "Could not load reservations.\n"
+                                + exception.getMessage(),
+                        "Database Error",
+                        JOptionPane.ERROR_MESSAGE
+                );
+            }
+        };
+
+        cancelButton.addActionListener(event -> {
+
+            int selectedRow = table.getSelectedRow();
+
+            if (selectedRow == -1) {
+                JOptionPane.showMessageDialog(
+                        cancelFrame,
+                        "Please select a reservation to cancel.",
+                        "No Reservation Selected",
+                        JOptionPane.WARNING_MESSAGE
+                );
+                return;
+            }
+
+            int modelRow = table.convertRowIndexToModel(selectedRow);
+
+            int reservationId =
+                    ((Number) model.getValueAt(modelRow, 0)).intValue();
+
+            String passengerName =
+                    String.valueOf(model.getValueAt(modelRow, 1));
+
+            int confirmation = JOptionPane.showConfirmDialog(
+                    cancelFrame,
+                    "Are you sure you want to cancel the reservation for "
+                            + passengerName + "?\nReservation ID: "
+                            + reservationId,
+                    "Confirm Cancellation",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE
+            );
+
+            if (confirmation != JOptionPane.YES_OPTION) {
+                return;
+            }
+
+            try {
+                boolean deleted =
+                        new ReservationDAO().deleteById(reservationId);
+
+                if (deleted) {
+                    JOptionPane.showMessageDialog(
+                            cancelFrame,
+                            "Reservation cancelled successfully.",
+                            "Cancellation Successful",
+                            JOptionPane.INFORMATION_MESSAGE
+                    );
+                } else {
+                    JOptionPane.showMessageDialog(
+                            cancelFrame,
+                            "Reservation was not found. Refreshing the list.",
+                            "Cancellation Failed",
+                            JOptionPane.WARNING_MESSAGE
+                    );
+                }
+
+                loadReservations.run();
+
+            } catch (SQLException | IllegalStateException exception) {
+                JOptionPane.showMessageDialog(
+                        cancelFrame,
+                        "Could not cancel reservation.\n"
+                                + exception.getMessage(),
+                        "Database Error",
+                        JOptionPane.ERROR_MESSAGE
+                );
+            }
+        });
+
+        closeButton.addActionListener(event -> cancelFrame.dispose());
+
+        JPanel buttonPanel = new JPanel(
+                new FlowLayout(FlowLayout.CENTER, 12, 10)
+        );
+        buttonPanel.add(cancelButton);
+        buttonPanel.add(closeButton);
+
+        cancelFrame.setLayout(new BorderLayout(10, 10));
+        cancelFrame.add(new JScrollPane(table), BorderLayout.CENTER);
+        cancelFrame.add(buttonPanel, BorderLayout.SOUTH);
+
+        loadReservations.run();
+        cancelFrame.setVisible(true);
     }
 }

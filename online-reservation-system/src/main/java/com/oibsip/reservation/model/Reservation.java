@@ -1,10 +1,10 @@
-
 package com.oibsip.reservation.model;
 
 import java.time.LocalDate;
 
 public class Reservation {
 
+    private int id;
     private String passengerName;
     private String trainNumber;
     private LocalDate journeyDate;
@@ -16,6 +16,23 @@ public class Reservation {
         this.trainNumber = trainNumber;
         this.journeyDate = journeyDate;
         this.travelClass = travelClass;
+    }
+
+    public Reservation(int id, String passengerName, String trainNumber,
+                       LocalDate journeyDate, String travelClass) {
+        this.id = id;
+        this.passengerName = passengerName;
+        this.trainNumber = trainNumber;
+        this.journeyDate = journeyDate;
+        this.travelClass = travelClass;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 
     public String getPassengerName() {
