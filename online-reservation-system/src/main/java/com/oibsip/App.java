@@ -1,10 +1,12 @@
 
 package com.oibsip;
 
+import com.oibsip.reservation.dao.ReservationDAO;
 import com.oibsip.reservation.model.Reservation;
 
 import javax.swing.*;
 import java.awt.*;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 
@@ -156,19 +158,57 @@ public class App {
                     travelClass
             );
 
-            JOptionPane.showMessageDialog(
-                    bookingFrame,
-                    "Reservation object created successfully!\n\n"
-                            + "Passenger: "
-                            + reservation.getPassengerName() + "\n"
-                            + "Train Number: "
-                            + reservation.getTrainNumber() + "\n"
-                            + "Journey Date: "
-                            + reservation.getJourneyDate() + "\n"
-                            + "Travel Class: "
-                            + reservation.getTravelClass()
-                            + "\n\nThis reservation is not saved yet."
-            );
+            try {
+                ReservationDAO reservationDAO = new ReservationDAO();
+
+                boolean saved = reservationDAO.save(reservation);
+
+                if (saved) {
+                    JOptionPane.showMessageDialog(
+                            bookingFrame,
+                            "Reservation booked successfully!\n\n"
+                                    + "Passenger: "
+                                    + reservation.getPassengerName() + "\n"
+                                    + "Train Number: "
+                                    + reservation.getTrainNumber() + "\n"
+                                    + "Journey Date: "
+                                    + reservation.getJourneyDate() + "\n"
+                                    + "Travel Class: "
+                                    + reservation.getTravelClass(),
+                            "Booking Successful",
+                            JOptionPane.INFORMATION_MESSAGE
+                    );
+
+                    nameField.setText("");
+                    trainField.setText("");
+                    dateField.setText("");
+                    classBox.setSelectedIndex(0);
+
+                } else {
+                    JOptionPane.showMessageDialog(
+                            bookingFrame,
+                            "Reservation could not be saved.",
+                            "Booking Failed",
+                            JOptionPane.WARNING_MESSAGE
+                    );
+                }
+
+            } catch (SQLException exception) {
+                JOptionPane.showMessageDialog(
+                        bookingFrame,
+                        "Database error: " + exception.getMessage(),
+                        "Database Error",
+                        JOptionPane.ERROR_MESSAGE
+                );
+
+            } catch (IllegalStateException exception) {
+                JOptionPane.showMessageDialog(
+                        bookingFrame,
+                        exception.getMessage(),
+                        "Configuration Error",
+                        JOptionPane.ERROR_MESSAGE
+                );
+            }
         });
 
         clearButton.addActionListener(event -> {
