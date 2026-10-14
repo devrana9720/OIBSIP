@@ -1,0 +1,5 @@
+target/
+release/
+release_icon/
+*.log
+.env
